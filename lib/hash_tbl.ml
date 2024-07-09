@@ -51,8 +51,10 @@ let insert key value tbl =
   (try
      match find_slot key tbl with
      | Some slot when slot.key = None || slot.deleted ->
+         Printf.printf "slot.deleted: %b\n" slot.deleted;
          slot.key <- Some key;
          slot.value <- Some value;
+         (* Is slot.deleted at this point not false? *)
          slot.deleted <- false;
          tbl.size <- tbl.size + 1
      | Some slot -> slot.value <- Some value (* update existing key *)
@@ -113,18 +115,18 @@ let update key value tbl =
   Mutex.unlock bucket_lock
 
 (* let resize_bucket tbl =
-  let new_bucket : 'a t = create (2 * Array.length tbl.buckets) in
-  let rec probe i =
-    if i < Array.length tbl.buckets then
-      let slot = tbl.buckets.(i) in
-      let key = slot.key |> Option.get in
-      (* let bucket_index = hash key (Array.length new_bucket.buckets) in
-         let slot = tbl.buckets.((bucket_index + 1) mod (Array.length tbl.buckets)) in *)
-      match slot.key with
-      | Some k when k = key && slot.deleted -> insert key slot.value new_bucket
-      | _ -> probe (i + 1)
-  in
-  probe 0;
-  tbl.buckets <- new_bucket.buckets *)
+   let new_bucket : 'a t = create (2 * Array.length tbl.buckets) in
+   let rec probe i =
+     if i < Array.length tbl.buckets then
+       let slot = tbl.buckets.(i) in
+       let key = slot.key |> Option.get in
+       (* let bucket_index = hash key (Array.length new_bucket.buckets) in
+          let slot = tbl.buckets.((bucket_index + 1) mod (Array.length tbl.buckets)) in *)
+       match slot.key with
+       | Some k when k = key && slot.deleted -> insert key slot.value new_bucket
+       | _ -> probe (i + 1)
+   in
+   probe 0;
+   tbl.buckets <- new_bucket.buckets *)
 
 (* else tbl.buckets <- new_bucket *)

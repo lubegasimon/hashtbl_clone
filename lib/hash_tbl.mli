@@ -1,5 +1,18 @@
 type key = string
-type 'a t
+
+type 'a slot = {
+  mutable key : key option;
+  mutable value : 'a option;
+  mutable deleted : bool;
+}
+
+type 'a t = {
+  buckets : 'a slot array;
+  (* mutable keyword makes sense when insertion or deletion occur in which case
+     size increases by one and decreases by same respectively. *)
+  mutable size : int;
+  locks : Mutex.t array;
+}
 
 (* [create] initializes a new key-value store with the given initial bucket size. *)
 val create : int -> 'a t

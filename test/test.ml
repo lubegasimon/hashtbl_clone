@@ -1,23 +1,11 @@
 open Alcotest
+open Hash_tbl
 
-type key = string
-
-type 'a slot = {
-  key : key option; [@equal fun a b -> a = b]
-  value : 'a option; [@equal fun a b -> a = b]
-  deleted : bool; [@equal fun a b -> a = b]
-}
-[@@deriving eq]
-
-type 'a t = {
-  buckets : 'a slot array;
-  (* mutable keyword makes sense when insertion or deletion occur in which case
-     size increases by one and decreases by same respectively. *)
-  size : int;
-  locks : Mutex.t array;
-}
-
-let equal_slot slot_a slot_b = equal_slot slot_a slot_b
+let equal_tbl (tbl_a : 'a t) (tbl_b : 'a t) =
+  match (tbl_a, tbl_b) with
+  | ( { buckets = buckets_a; size = size_a; _ },
+      { buckets = buckets_b; size = size_b; _ } ) ->
+      buckets_a = buckets_b && size_a = size_b
 
 let pp_print_key fmt = function
   | None -> Format.fprintf fmt "None"
@@ -27,35 +15,49 @@ let pp_print_value pp_v fmt = function
   | None -> Format.fprintf fmt "None"
   | Some v -> Format.fprintf fmt "Some %a" pp_v v
 
-let pp_print_slot pp_value fmt slot =
+let pp_print_slot pp_v fmt slot =
   let { key; value; deleted } = slot in
   Format.fprintf fmt "{ key = %a; value = %a; deleted = %b }" pp_print_key key
-    (pp_print_value pp_value) value deleted
+    (pp_print_value pp_v) value deleted
 
-let testable_slot pp_value =
-  testable (pp_print_slot pp_value) (equal_slot ( = ))
+let pp_print_array pp_elem fmt arr =
+  Format.fprintf fmt "[|";
+  Array.iteri
+    (fun i e -> if i > 0 then Format.fprintf fmt "; " else pp_elem fmt e)
+    arr;
+  Format.fprintf fmt "|]"
 
-let create initial_bkt_size =
-  let buckets =
-    Array.make initial_bkt_size { key = None; value = None; deleted = false }
-  in
-  let locks = Array.make initial_bkt_size (Mutex.create ()) in
-  { buckets; size = 0; locks }
+let pp_print_slots pp_v fmt (slots : 'a slot array) =
+  pp_print_array (pp_print_slot pp_v) fmt slots
 
-let tbl : int t = create 2
+let pp_print_locks fmt (locks : Mutex.t array) =
+  Format.fprintf fmt "[|";
+  Array.iter (fun _ -> Format.fprintf fmt "") locks;
+  Format.fprintf fmt "|]"
+
+let pp_print_tbl pp_v fmt tbl =
+  let { buckets; size; locks } = tbl in
+  Format.fprintf fmt "{ buckets = %a; size = %i; locks = %a}"
+    (pp_print_slots pp_v) buckets size pp_print_locks locks
+
+let testable_table pp_v = testable (pp_print_tbl pp_v) equal_tbl
+let tbl = create 2
 
 let test_create_op () =
-  let { buckets; size; locks } = tbl in
-  let _size, _locs = (size, locks) in
-  let actual = buckets in
+  let actual = tbl in
   let expected =
-    [|
-      { key = None; value = None; deleted = false };
-      { key = None; value = None; deleted = false };
-    |]
+    {
+      buckets =
+        [|
+          { key = None; value = None; deleted = false };
+          { key = None; value = None; deleted = false };
+        |];
+      size = 0;
+      locks = [||];
+    }
   in
-  Alcotest.(check (array (testable_slot Format.pp_print_int)))
-    "same tbl" actual expected
+  Alcotest.(check (testable_table Format.pp_print_int))
+    "same table" actual expected
 
 let () =
   run "Hash_tbl Operations"

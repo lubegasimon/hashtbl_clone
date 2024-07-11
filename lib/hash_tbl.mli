@@ -17,6 +17,9 @@ type 'a t = {
 (* [create] initializes a new key-value store with the given initial bucket size. *)
 val create : int -> 'a t
 
+(* [find_slot lktbl] returns the slot in the [tbl] with a key equal to [k] *)
+val find_slot : key -> 'a t -> 'a slot option
+
 (*  [insert] key-value pair in the data structure *)
 val insert : key -> 'a -> 'a t -> unit
 

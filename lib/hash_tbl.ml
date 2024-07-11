@@ -51,7 +51,6 @@ let insert key value tbl =
   (try
      match find_slot key tbl with
      | Some slot when slot.key = None || slot.deleted ->
-         Printf.printf "slot.deleted: %b\n" slot.deleted;
          slot.key <- Some key;
          slot.value <- Some value;
          (* Is slot.deleted at this point not false? *)

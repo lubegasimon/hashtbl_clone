@@ -33,7 +33,7 @@ let find_slot key tbl =
     if i < bucket_length then
       (* search for slots starting from most likely bucket index (bucket_index)
          while following a linear probing sequence (bucket_index + 1)*)
-      let slot = buckets.((bucket_index + 1) mod bucket_length) in
+      let slot = buckets.((bucket_index + i) mod bucket_length) in
       match slot.key with
       | Some k when k = key -> Some slot
       (* useful when we want to insert or update the slot *)
